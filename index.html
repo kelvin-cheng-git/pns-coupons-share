@@ -82,8 +82,14 @@
         }
         .checkbox-wrapper {
             position: relative;
-            width: 24px;
-            height: 24px;
+            /* Slightly increased wrapper size for a better mobile touch target */
+            width: 32px; 
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 6px;
         }
         .custom-check {
             width: 24px;
@@ -93,6 +99,7 @@
             display: inline-block;
             box-sizing: border-box;
             background: white;
+            position: relative;
         }
         .coupon-row.checked .custom-check {
             background: var(--success);
@@ -101,8 +108,8 @@
         .coupon-row.checked .custom-check::after {
             content: '';
             position: absolute;
-            left: 9px;
-            top: 4px;
+            left: 7px;
+            top: 2px;
             width: 5px;
             height: 11px;
             border: solid white;
@@ -140,6 +147,7 @@
             font-size: 14px;
             white-space: nowrap;
             box-shadow: 0 2px 4px rgba(0,102,204,0.2);
+            cursor: pointer;
         }
         .coupon-row.checked .open-btn {
             background-color: #e5e5ea;
@@ -193,8 +201,8 @@
     <div class="coupon-grid" id="couponContainer"></div>
     
     <div class="footer-note">
-        使用提示：點擊後會自動勾選記錄。<br>
-        資料會自動即時同步。客服熱線：CK wing
+        使用提示：點擊勾選或者打開禮券就代表用咗喇，手快有手慢無！🏃‍♂️💨<br>
+        未必即刻覆嘅客服：CK wing 🙇‍♂️
     </div>
 
     <script>
@@ -262,9 +270,10 @@
                 const row = document.createElement('div');
                 row.className = `coupon-row ${isChecked ? 'checked' : ''}`;
                 
+                // IMPORTANT CHANGE: The onclick="toggleCoupon" has been moved from the .left-zone to the .checkbox-wrapper
                 row.innerHTML = `
-                    <div class="left-zone" onclick="toggleCoupon(${coupon.id})">
-                        <div class="checkbox-wrapper">
+                    <div class="left-zone">
+                        <div class="checkbox-wrapper" onclick="toggleCoupon(${coupon.id})">
                             <span class="custom-check"></span>
                         </div>
                         <div class="coupon-info">
