@@ -11,168 +11,109 @@
     <style>
         :root {
             --primary: #0066cc;
-            --success: #2e7d32;
-            --gray-bg: #f5f5f7;
+            --primary-hover: #0052a3;
+            --success: #34c759;
+            --bg-color: #f2f2f7;
+            --card-bg: #ffffff;
             --border: #e5e5ea;
             --text-dark: #1c1c1e;
             --text-muted: #8e8e93;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+            --shadow-md: 0 8px 16px rgba(0,0,0,0.08);
         }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #ededf2;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
             margin: 0;
-            padding: 12px;
+            padding: 0;
             color: var(--text-dark);
             -webkit-font-smoothing: antialiased;
         }
-        .header-card {
-            background: linear-gradient(135deg, #1f2937, #111827);
-            color: white;
-            padding: 20px 16px;
-            border-radius: 16px;
-            margin-bottom: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+
+        /* Centralized App Container for Desktop */
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 16px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
+
+        /* Beautiful Modern Header */
+        .header-card {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: white;
+            padding: 24px 20px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Decorative background element for header */
+        .header-card::after {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 150px;
+            height: 150px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+        }
+
         .header-card h2 {
-            margin: 0 0 12px 0;
-            font-size: 20px;
-            color: #ffcc00;
+            margin: 0 0 16px 0;
+            font-size: 22px;
+            color: #ffd60a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .meta-line {
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: rgba(255,255,255,0.85);
             display: flex;
             align-items: center;
             gap: 6px;
         }
-        .meta-line {
-            font-size: 14px;
-            margin-bottom: 6px;
-            opacity: 0.9;
-        }
+
         .tracker-bar {
             background: rgba(255,255,255,0.15);
-            border-radius: 20px;
-            padding: 10px 14px;
-            margin-top: 14px;
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-top: 18px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-weight: bold;
-            font-size: 15px;
-        }
-        .coupon-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            padding-bottom: 40px;
-        }
-        .coupon-row {
-            background: white;
-            border-radius: 14px;
-            padding: 12px 14px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-            border: 1px solid var(--border);
-            transition: all 0.2s ease;
-        }
-        .left-zone {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex-grow: 1;
-        }
-        .checkbox-wrapper {
-            position: relative;
-            /* Slightly increased wrapper size for a better mobile touch target */
-            width: 32px; 
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            border-radius: 6px;
-        }
-        .custom-check {
-            width: 24px;
-            height: 24px;
-            border: 2px solid #cdcdcf;
-            border-radius: 6px;
-            display: inline-block;
-            box-sizing: border-box;
-            background: white;
-            position: relative;
-        }
-        .coupon-row.checked .custom-check {
-            background: var(--success);
-            border-color: var(--success);
-        }
-        .coupon-row.checked .custom-check::after {
-            content: '';
-            position: absolute;
-            left: 7px;
-            top: 2px;
-            width: 5px;
-            height: 11px;
-            border: solid white;
-            border-width: 0 3px 3px 0;
-            transform: rotate(45deg);
-        }
-        .coupon-info {
-            display: flex;
-            flex-direction: column;
-        }
-        .coupon-title {
-            font-weight: bold;
+            font-weight: 600;
             font-size: 16px;
+            border: 1px solid rgba(255,255,255,0.1);
         }
-        .coupon-row.checked .coupon-title {
-            text-decoration: line-through;
-            color: var(--text-muted);
-        }
-        .coupon-status {
-            font-size: 12px;
-            color: var(--success);
-            font-weight: 500;
-            margin-top: 2px;
-        }
-        .coupon-row.checked .coupon-status {
-            color: var(--text-muted);
-        }
-        .open-btn {
-            background-color: var(--primary);
-            color: white;
-            text-decoration: none;
-            padding: 10px 16px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 14px;
-            white-space: nowrap;
-            box-shadow: 0 2px 4px rgba(0,102,204,0.2);
-            cursor: pointer;
-        }
-        .coupon-row.checked .open-btn {
-            background-color: #e5e5ea;
-            color: var(--text-muted);
-            box-shadow: none;
-            pointer-events: none; /* Prevents opening used coupons */
-        }
-        .footer-note {
-            text-align: center;
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 10px;
-            line-height: 1.4;
-        }
+
         .sync-indicator {
             text-align: center;
-            font-size: 12px;
+            font-size: 13px;
             color: var(--success);
-            margin-bottom: 12px;
-            font-weight: bold;
-            display: flex;
+            margin-bottom: 16px;
+            font-weight: 600;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 5px;
+            gap: 6px;
+            background: #e5f9e7;
+            padding: 6px 16px;
+            border-radius: 20px;
+            align-self: center;
         }
+
         .pulse {
             width: 8px;
             height: 8px;
@@ -181,28 +122,183 @@
             display: inline-block;
             animation: blink 1.5s infinite;
         }
-        @keyframes blink { 0% { opacity: 0.2; } 50% { opacity: 1; } 100% { opacity: 0.2; } }
+        @keyframes blink { 0% { opacity: 0.3; } 50% { opacity: 1; box-shadow: 0 0 8px var(--success);} 100% { opacity: 0.3; } }
+
+        /* Responsive Grid: 1 col on mobile, 2 cols on desktop */
+        .coupon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+            padding-bottom: 30px;
+            flex-grow: 1;
+        }
+
+        .coupon-row {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            transition: all 0.25s cubic-bezier(0.075, 0.82, 0.165, 1);
+        }
+
+        /* Desktop hover effect */
+        @media (hover: hover) {
+            .coupon-row:hover {
+                transform: translateY(-3px);
+                box-shadow: var(--shadow-md);
+                border-color: #d1d1d6;
+            }
+        }
+
+        .left-zone {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-grow: 1;
+        }
+
+        .checkbox-wrapper {
+            position: relative;
+            width: 36px; 
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: transform 0.1s ease;
+        }
+
+        .checkbox-wrapper:active {
+            transform: scale(0.9);
+        }
+
+        .custom-check {
+            width: 26px;
+            height: 26px;
+            border: 2px solid #c7c7cc;
+            border-radius: 50%; /* Making it circular looks more modern */
+            display: inline-block;
+            box-sizing: border-box;
+            background: white;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .coupon-row.checked .custom-check {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        .coupon-row.checked .custom-check::after {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 4px;
+            width: 5px;
+            height: 11px;
+            border: solid white;
+            border-width: 0 2.5px 2.5px 0;
+            transform: rotate(45deg);
+        }
+
+        .coupon-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .coupon-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: var(--text-dark);
+            transition: color 0.2s ease;
+        }
+
+        .coupon-row.checked .coupon-title {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+
+        .coupon-status {
+            font-size: 13px;
+            color: var(--success);
+            font-weight: 500;
+        }
+
+        .coupon-row.checked .coupon-status {
+            color: var(--text-muted);
+        }
+
+        .open-btn {
+            background-color: var(--primary);
+            color: white;
+            text-decoration: none;
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        @media (hover: hover) {
+            .open-btn:hover {
+                background-color: var(--primary-hover);
+                transform: scale(1.02);
+            }
+        }
+
+        .open-btn:active {
+            transform: scale(0.98);
+        }
+
+        .coupon-row.checked .open-btn {
+            background-color: #f2f2f7;
+            color: #aeaeb2;
+            pointer-events: none;
+        }
+
+        .footer-note {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: auto;
+            padding-top: 20px;
+            line-height: 1.6;
+        }
     </style>
 </head>
 <body>
 
-    <div class="header-card">
-        <h2>🎁 百佳超級市場 電子禮券</h2>
-        <div class="meta-line"><b>👤 登記姓名：</b>MUI CHUNG PING</div>
-        <div class="meta-line"><b>🔢 參考編號：</b>C260211074</div>
-        <div class="tracker-bar">
-            <span>餘額：$<span id="remaining-funds">0</span></span>
-            <span style="font-size:12px; font-weight:normal; opacity:0.8;"><span id="checked-count">0</span> / 20 張已用</span>
+    <div class="app-container">
+        <div class="header-card">
+            <h2>🛒 百佳超級市場 電子禮券</h2>
+            <div class="meta-line">👤 <b>登記姓名：</b> MUI CHUNG PING</div>
+            <div class="meta-line">🔢 <b>參考編號：</b> C260211074</div>
+            <div class="tracker-bar">
+                <span>餘額：$<span id="remaining-funds">0</span></span>
+                <span style="font-size:13px; font-weight:500; opacity:0.9;"><span id="checked-count">0</span> / 20 張已用</span>
+            </div>
         </div>
-    </div>
 
-    <div class="sync-indicator" id="syncStatus"><span class="pulse"></span> 即時雲端連線中...</div>
+        <div style="display: flex; justify-content: center;">
+            <div class="sync-indicator" id="syncStatus">
+                <span class="pulse"></span> 即時雲端連線中...
+            </div>
+        </div>
 
-    <div class="coupon-grid" id="couponContainer"></div>
-    
-    <div class="footer-note">
-        使用提示：點擊勾選或者打開禮券就代表用咗喇，手快有手慢無！🏃‍♂️💨<br>
-        未必即刻覆嘅客服：CK wing 🙇‍♂️
+        <div class="coupon-grid" id="couponContainer"></div>
+        
+        <div class="footer-note">
+            溫馨提示：點擊勾選或者打開禮券就代表用咗喇，手快有手慢無！🏃‍♂️💨<br>
+            未必即刻覆嘅客服：CK wing 🙇‍♂️
+        </div>
     </div>
 
     <script>
@@ -242,11 +338,9 @@
         let currentState = {};
 
         // 2. LISTEN FOR LIVE CHANGES
-        // This function automatically runs the *millisecond* anyone changes a value
         db.on("value", (snapshot) => {
             const data = snapshot.val();
             
-            // If database is completely empty, initialize the first three as true
             if (!data) {
                 db.update({ 1: true, 2: true, 3: true });
                 return;
@@ -270,7 +364,6 @@
                 const row = document.createElement('div');
                 row.className = `coupon-row ${isChecked ? 'checked' : ''}`;
                 
-                // IMPORTANT CHANGE: The onclick="toggleCoupon" has been moved from the .left-zone to the .checkbox-wrapper
                 row.innerHTML = `
                     <div class="left-zone">
                         <div class="checkbox-wrapper" onclick="toggleCoupon(${coupon.id})">
