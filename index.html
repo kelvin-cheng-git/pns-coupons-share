@@ -82,7 +82,6 @@
         }
         .checkbox-wrapper {
             position: relative;
-            /* Slightly increased wrapper size for a better mobile touch target */
             width: 32px; 
             height: 32px;
             display: flex;
@@ -90,6 +89,10 @@
             justify-content: center;
             cursor: pointer;
             border-radius: 6px;
+            /* 防止手機長按時彈出選單或選取文字 */
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
         .custom-check {
             width: 24px;
@@ -201,7 +204,7 @@
     <div class="coupon-grid" id="couponContainer"></div>
     
     <div class="footer-note">
-        使用提示：點擊勾選或者打開禮券就代表用咗喇，手快有手慢無！🏃‍♂️💨<br>
+        使用提示：請精準長按勾選框 5.00 秒以標記使用。<br>
         未必即刻覆嘅客服：CK wing 🙇‍♂️
     </div>
 
@@ -240,13 +243,12 @@
         ];
 
         let currentState = {};
+        let pressStartTime = null;
 
         // 2. LISTEN FOR LIVE CHANGES
-        // This function automatically runs the *millisecond* anyone changes a value
         db.on("value", (snapshot) => {
             const data = snapshot.val();
             
-            // If database is completely empty, initialize the first three as true
             if (!data) {
                 db.update({ 1: true, 2: true, 3: true });
                 return;
@@ -270,10 +272,16 @@
                 const row = document.createElement('div');
                 row.className = `coupon-row ${isChecked ? 'checked' : ''}`;
                 
-                // IMPORTANT CHANGE: The onclick="toggleCoupon" has been moved from the .left-zone to the .checkbox-wrapper
+                // 加入 Mouse 同 Touch 事件捕捉
                 row.innerHTML = `
                     <div class="left-zone">
-                        <div class="checkbox-wrapper" onclick="toggleCoupon(${coupon.id})">
+                        <div class="checkbox-wrapper" 
+                             onmousedown="startPress(event)" 
+                             onmouseup="endPress(event, ${coupon.id})" 
+                             onmouseleave="cancelPress()" 
+                             ontouchstart="startPress(event)" 
+                             ontouchend="endPress(event, ${coupon.id})" 
+                             ontouchcancel="cancelPress()">
                             <span class="custom-check"></span>
                         </div>
                         <div class="coupon-info">
@@ -292,12 +300,51 @@
             document.getElementById('remaining-funds').innerText = (20 - checkedCount) * 100;
         }
 
-        // 4. WRITE CHANGES TO FIREBASE
-        function toggleCoupon(id) {
-            const newValue = !(currentState[id] === true);
-            db.child(id.toString()).set(newValue);
+        // 4. THE 5-SECOND TORTURE LOGIC
+        function startPress(e) {
+            if (e.cancelable) e.preventDefault(); // 攔截預設操作 (例如右鍵單 / 選取)
+            if (pressStartTime) return;
+            pressStartTime = Date.now();
+            document.getElementById('syncStatus').innerHTML = '🔥 聚氣中... 請精準長按剛好 5 秒！';
         }
 
+        function endPress(e, id) {
+            if (e.cancelable) e.preventDefault();
+            if (!pressStartTime) return;
+            
+            const duration = (Date.now() - pressStartTime) / 1000;
+            pressStartTime = null;
+
+            const isCurrentlyUsed = currentState[id] === true;
+
+            if (duration >= 4.8 && duration <= 5.2) {
+                alert(`⏱️ 完美！你㩒咗 ${duration.toFixed(2)} 秒，過關！`);
+                db.child(id.toString()).set(!isCurrentlyUsed);
+                document.getElementById('syncStatus').innerHTML = '<span class="pulse"></span> 即時同步已連線';
+            } else if (duration < 4.8) {
+                alert(`❌ 失敗！你只係㩒咗 ${duration.toFixed(2)} 秒，太快喇！急咩啫？`);
+                resetSyncStatus();
+            } else {
+                alert(`❌ 失敗！你㩒咗 ${duration.toFixed(2)} 秒，太耐喇！瞓著咗呀？`);
+                resetSyncStatus();
+            }
+        }
+
+        function cancelPress() {
+            if (pressStartTime) {
+                pressStartTime = null;
+                document.getElementById('syncStatus').innerHTML = '⚠️ 聚氣中斷！手指滑出咗範圍';
+                resetSyncStatus();
+            }
+        }
+
+        function resetSyncStatus() {
+            setTimeout(() => {
+                document.getElementById('syncStatus').innerHTML = '<span class="pulse"></span> 即時同步已連線';
+            }, 2000);
+        }
+
+        // Secret Escape Hatch (The loophole)
         function autoMarkUsed(id) {
             if (currentState[id] !== true) {
                 db.child(id.toString()).set(true);
