@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MUI CHUNG PING - 百佳超級市場電子禮券</title>
+    <style>
+        :root {
+            --primary: #0066cc;
+            --success: #2e7d32;
+            --gray-bg: #f5f5f7;
+            --border: #e5e5ea;
+            --text-dark: #1c1c1e;
+            --text-muted: #8e8e93;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #ededf2;
+            margin: 0;
+            padding: 12px;
+            color: var(--text-dark);
+            -webkit-font-smoothing: antialiased;
+        }
+        .header-card {
+            background: linear-gradient(135deg, #1f2937, #111827);
+            color: white;
+            padding: 20px 16px;
+            border-radius: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .header-card h2 {
+            margin: 0 0 12px 0;
+            font-size: 20px;
+            color: #ffcc00;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .meta-line {
+            font-size: 14px;
+            margin-bottom: 6px;
+            opacity: 0.9;
+        }
+        .tracker-bar {
+            background: rgba(255,255,255,0.15);
+            border-radius: 20px;
+            padding: 10px 14px;
+            margin-top: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 15px;
+        }
+        .coupon-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-bottom: 40px;
+        }
+        .coupon-row {
+            background: white;
+            border-radius: 14px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+        }
+        .left-zone {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-grow: 1;
+        }
+        .checkbox-wrapper {
+            position: relative;
+            width: 24px;
+            height: 24px;
+        }
+        .custom-check {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #cdcdcf;
+            border-radius: 6px;
+            display: inline-block;
+            cursor: pointer;
+            box-sizing: border-box;
+            background: white;
+        }
+        .coupon-row.checked .custom-check {
+            background: var(--success);
+            border-color: var(--success);
+        }
+        .coupon-row.checked .custom-check::after {
+            content: '';
+            position: absolute;
+            left: 9px;
+            top: 4px;
+            width: 5px;
+            height: 11px;
+            border: solid white;
+            border-width: 0 3px 3px 0;
+            transform: rotate(45deg);
+        }
+        .coupon-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .coupon-title {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .coupon-row.checked .coupon-title {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+        .coupon-status {
+            font-size: 12px;
+            color: var(--success);
+            font-weight: 500;
+            margin-top: 2px;
+        }
+        .coupon-row.checked .coupon-status {
+            color: var(--text-muted);
+        }
+        .open-btn {
+            background-color: var(--primary);
+            color: white;
+            text-decoration: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0,102,204,0.2);
+        }
+        .coupon-row.checked .open-btn {
+            background-color: #e5e5ea;
+            color: var(--text-muted);
+            box-shadow: none;
+        }
+        .footer-note {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 10px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-card">
+        <h2>🎁 百佳超級市場 電子禮券</h2>
+        <div class="meta-line"><b>👤 登記姓名：</b>MUI CHUNG PING</div>
+        <div class="meta-line"><b>🔢 參考編號：</b>C260211074</div>
+        <div class="tracker-bar">
+            <span>餘額：$<span id="remaining-funds">1700</span></span>
+            <span style="font-size:12px; font-weight:normal; opacity:0.8;"><span id="checked-count">3</span> / 20 張已用</span>
+        </div>
+    </div>
+
+    <div class="coupon-grid" id="couponContainer"></div>
+    
+    <div class="footer-note">
+        使用提示：用完後勾選方格即可記錄。<br>
+        如需任何協助，請致電百佳客服：2606 8658
+    </div>
+
+    <script>
+        // Full Dataset Restored with original links
+        const couponsData = [
+            { id: 1, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/303198c7e458f0716e57dd67c9f8cad3a7757d796ff1226d8dacf23301e2ce29425dfc45fe0347deb8130b0adf6b3f87a91c66b304910a08a9e91addc6a113a819e7" },
+            { id: 2, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/3031f8c80819b5127c83edb4bc83f1a92deb8dfc8d418ed75d8870c3cde0fe66a6df8d74e9a2f027ae9a2f64ec83ce675bfaf9d3bfac8c140f0f44bb2492de3c3ef0" },
+            { id: 3, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/3031c172e2593431e0292f29565c312433cb0e111b710889796b260070fb89c31918fc12dbdb677e178440958ee3c007c9c8c130a1b13e663af6e3427cdac2f849c1" },
+            { id: 4, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/3031d5bd149921106fa9aa305086bfdb233f55f981596c0f9336c0a0ce988830e61192841cf9c190906658be778eddc43400f9bbd037ebb076acc7450dcafa7e004c" },
+            { id: 5, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/3031283bd6ebaa7ec6acfb744bb34ce1920c7df67265e411783ad0ed880284c98dd26bed2f962c19bef2a4fade59d7bbe0831e1bc5736232bffd4b512dcfd6322c84" },
+            { id: 6, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/30315f257eb8c39c6eeed293a518c35697307eebeb05ce1b2223beb99035cef090fd05c6afa2b92f1cece20519a43a368e0e48f85fc73953fd12c7678cc2c5f54892" },
+            { id: 7, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/3031d3acbad1788c4f48690c9fccf62a318d99adeb5857507a4dbf68c026a3d3eb9d036439c8c1c31d4f828e6c52c3bb8e9209c22147e6956d1da4b50b6d095f6f57" },
+            { id: 8, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/3031e6f4423e069f67cbf3b5b484edd928bce8801ad094d95306a56810107d53af7f6436326da904a910c52a90cf470a4532dc935c55fc160d3108e08f360f7762cd" },
+            { id: 9, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/3031c32d413750080465b234e6f86801b83a8131812154dc4e69b6e6727c525ada314cc18165a73e333953cd04d0db9df959338918c43069881810619ce424ad3296" },
+            { id: 10, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/303110836638ba16bbd4836667fb9422b267fb9422b267cb2dabcc92af2a743e650fe44b714c5549b760719566dda204dabbc13b36d48dcc0329b486b364424222cc526bea1807" },
+            { id: 11, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/30312231f8d94c407c07131ec82b4274c695bcc54c478c3b682ee0f89cc35079ff4acd39f63d869ddbb1bcdd15e2650b01f2b43ef43edb06e17d7d6f0f5b82cec271" },
+            { id: 12, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/303139bf73afebf4a2be25b3f56fad0907512ce702d00ae4dead4527d172d83cf49facaed2256e56673096ca799bb661b558b818b2356b28b01a5aef11d12db37fc1" },
+            { id: 13, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/3031d4c68ad8e0304c6685f95ababcacc29a3763b0799e309bb53a4c75b50fe273e69858de9e19e13626977e9edb8fa26b5b7764274b33f9d15b5a50eeb6b3852f05" },
+            { id: 14, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/30314d3ad769242fcc681f5ff3ee9f7bd2f605bdaa4137b4795d551ad78c3080c7426a9c825f6e3194a088dc3554a0925434e2a7d4a4cd3b6a6f10e9956a4a498278" },
+            { id: 15, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/3031b8ca9f7480a64c20482b3962fa3fcfe864c249a6957ddc4f92b8f0c97230a89f18f38691de5f9bb3713a24c5c792485334175b48ab41a8addf5f41a264877825" },
+            { id: 16, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/3031a7bfad824a81309aa1edec51134255fbd9ffae42725e9642b01433bfc9b191a4a3d1798725fec0736c1d413120508433589c2f1dfe980ae181f6cb49c98eba6a" },
+            { id: 17, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/30313118cf75856c2ebe6901bfee19eb7ca734d0885449c492338f88ebc0907fb72c7106103e01df36e6fb3f915581a5d71e1d856f4dc0e5d91860f46617a0697a5f" },
+            { id: 18, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/3031ee6b0956438c2e65cac9b2a8e16a81d656875d8ab4fd8a596725096a5d690c2d92062c57d4ac8a403ce18e686e656c19c15fd633f5d4c7ffb14ab1f4bac1ced0" },
+            { id: 19, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/3031bf3951acf1258e367ca3b74a537ef1d8733295bf482dc5a613b05efa8ea4603995926e02ff45f9102258fefcb72d5534549715ae658cdd0350284f9098b15fbe" },
+            { id: 20, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/3031eda7b2949bb18d7b467ed4886a2dde47849f4c644c07ab3d2045337f2a331b851504266400e9e7ebd5e4f484cb6c0db909358c2eebb38b8fc1cc3ff190641a29" }
+        ];
+
+        // Seed state if completely fresh
+        if (!localStorage.getItem('coupons_initialized')) {
+            localStorage.setItem('coupon_1', 'true');
+            localStorage.setItem('coupon_2', 'true');
+            localStorage.setItem('coupon_3', 'true');
+            localStorage.setItem('coupons_initialized', 'true');
+        }
+
+        const container = document.getElementById('couponContainer');
+
+        function updateHeader() {
+            let checkedCount = 0;
+            couponsData.forEach(c => {
+                if (localStorage.getItem(`coupon_${c.id}`) === 'true') checkedCount++;
+            });
+            document.getElementById('checked-count').innerText = checkedCount;
+            document.getElementById('remaining-funds').innerText = (20 - checkedCount) * 100;
+        }
+
+        function buildDashboard() {
+            container.innerHTML = '';
+            couponsData.forEach(coupon => {
+                const isChecked = localStorage.getItem(`coupon_${coupon.id}`) === 'true';
+                
+                const row = document.createElement('div');
+                row.className = `coupon-row ${isChecked ? 'checked' : ''}`;
+                
+                row.innerHTML = `
+                    <div class="left-zone" onclick="toggleCoupon(${coupon.id})">
+                        <div class="checkbox-wrapper">
+                            <span class="custom-check"></span>
+                        </div>
+                        <div class="coupon-info">
+                            <span class="coupon-title">第 ${coupon.id.toString().padStart(2, '0')} 張 ($100)</span>
+                            <span class="coupon-status">${isChecked ? '已使用' : '可使用'}</span>
+                        </div>
+                    </div>
+                    <a class="open-btn" href="${coupon.url}" target="_blank" onclick="autoMarkUsed(${coupon.id})">
+                        ${isChecked ? '看二維碼' : '打開禮券'}
+                    </a>
+                `;
+                container.appendChild(row);
+            });
+            updateHeader();
+        }
+
+        function toggleCoupon(id) {
+            const current = localStorage.getItem(`coupon_${id}`) === 'true';
+            localStorage.setItem(`coupon_${id}`, !current);
+            buildDashboard();
+        }
+
+        function autoMarkUsed(id) {
+            localStorage.setItem(`coupon_${id}`, 'true');
+            setTimeout(buildDashboard, 800);
+        }
+
+        // Live syncing fallback across same browser tabs/views
+        window.addEventListener('storage', buildDashboard);
+
+        // Initial Layout Engine Build
+        buildDashboard();
+    </script>
+</body>
+</html>
