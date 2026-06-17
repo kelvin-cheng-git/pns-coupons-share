@@ -68,7 +68,6 @@
             justify-content: space-between;
             box-shadow: 0 2px 6px rgba(0,0,0,0.04);
             border: 1px solid var(--border);
-            transition: all 0.2s ease;
         }
         .left-zone {
             display: flex;
@@ -87,7 +86,6 @@
             border: 2px solid #cdcdcf;
             border-radius: 6px;
             display: inline-block;
-            cursor: pointer;
             box-sizing: border-box;
             background: white;
         }
@@ -150,6 +148,13 @@
             margin-top: 10px;
             line-height: 1.4;
         }
+        .sync-indicator {
+            text-align: center;
+            font-size: 11px;
+            color: var(--success);
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -164,15 +169,20 @@
         </div>
     </div>
 
+    <div class="sync-indicator" id="syncStatus">🔄 雲端同步中...</div>
+
     <div class="coupon-grid" id="couponContainer"></div>
     
     <div class="footer-note">
-        使用提示：用完後勾選方格即可記錄。<br>
-        如需任何協助，請致電百佳客服：2606 8658
+        使用提示：用完後點擊整行即可勾選記錄。<br>
+        兩部手機會自動同步更新。客服熱線：2606 8658
     </div>
 
     <script>
-        // Full Dataset Restored with original links
+        // Unique cloud locker name just for you and your mom
+        const BIN_ID = "muichungping_vouchers_2026";
+        const API_URL = `https://kvbin.com/b/${BIN_ID}`;
+
         const couponsData = [
             { id: 1, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/303198c7e458f0716e57dd67c9f8cad3a7757d796ff1226d8dacf23301e2ce29425dfc45fe0347deb8130b0adf6b3f87a91c66b304910a08a9e91addc6a113a819e7" },
             { id: 2, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/3031f8c80819b5127c83edb4bc83f1a92deb8dfc8d418ed75d8870c3cde0fe66a6df8d74e9a2f027ae9a2f64ec83ce675bfaf9d3bfac8c140f0f44bb2492de3c3ef0" },
@@ -196,29 +206,20 @@
             { id: 20, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/3031eda7b2949bb18d7b467ed4886a2dde47849f4c644c07ab3d2045337f2a331b851504266400e9e7ebd5e4f484cb6c0db909358c2eebb38b8fc1cc3ff190641a29" }
         ];
 
-        // Seed state if completely fresh
-        if (!localStorage.getItem('coupons_initialized')) {
-            localStorage.setItem('coupon_1', 'true');
-            localStorage.setItem('coupon_2', 'true');
-            localStorage.setItem('coupon_3', 'true');
-            localStorage.setItem('coupons_initialized', 'true');
-        }
+        // Default state: 1, 2, 3 are used, others are false
+        let usedState = { 1: true, 2: true, 3: true };
+        for(let i=4; i<=20; i++) usedState[i] = false;
 
         const container = document.getElementById('couponContainer');
+        const statusIndicator = document.getElementById('syncStatus');
 
-        function updateHeader() {
-            let checkedCount = 0;
-            couponsData.forEach(c => {
-                if (localStorage.getItem(`coupon_${c.id}`) === 'true') checkedCount++;
-            });
-            document.getElementById('checked-count').innerText = checkedCount;
-            document.getElementById('remaining-funds').innerText = (20 - checkedCount) * 100;
-        }
-
-        function buildDashboard() {
+        function updateUI() {
             container.innerHTML = '';
+            let checkedCount = 0;
+
             couponsData.forEach(coupon => {
-                const isChecked = localStorage.getItem(`coupon_${coupon.id}`) === 'true';
+                const isChecked = usedState[coupon.id] === true;
+                if (isChecked) checkedCount++;
                 
                 const row = document.createElement('div');
                 row.className = `coupon-row ${isChecked ? 'checked' : ''}`;
@@ -239,25 +240,62 @@
                 `;
                 container.appendChild(row);
             });
-            updateHeader();
+
+            document.getElementById('checked-count').innerText = checkedCount;
+            document.getElementById('remaining-funds').innerText = (20 - checkedCount) * 100;
         }
 
-        function toggleCoupon(id) {
-            const current = localStorage.getItem(`coupon_${id}`) === 'true';
-            localStorage.setItem(`coupon_${id}`, !current);
-            buildDashboard();
+        // Fetch shared state from the cloud
+        async function loadCloudData() {
+            try {
+                const res = await fetch(API_URL);
+                if (res.ok) {
+                    const data = await res.json();
+                    usedState = data;
+                    updateUI();
+                    statusIndicator.innerText = "✅ 雲端連線成功 (已同步)";
+                    statusIndicator.style.color = "var(--success)";
+                } else if (res.status === 404) {
+                    // If backend bucket doesn't exist yet, seed it
+                    await saveCloudData();
+                }
+            } catch (err) {
+                statusIndicator.innerText = "⚠️ 網絡慢，正在使用手機本機記錄";
+                statusIndicator.style.color = "orange";
+            }
         }
 
-        function autoMarkUsed(id) {
-            localStorage.setItem(`coupon_${id}`, 'true');
-            setTimeout(buildDashboard, 800);
+        // Save shared state to the cloud
+        async function saveCloudData() {
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(usedState)
+                });
+            } catch (err) {
+                console.error("Cloud save failed", err);
+            }
         }
 
-        // Live syncing fallback across same browser tabs/views
-        window.addEventListener('storage', buildDashboard);
+        async function toggleCoupon(id) {
+            usedState[id] = !usedState[id];
+            updateUI();
+            await saveCloudData();
+        }
 
-        // Initial Layout Engine Build
-        buildDashboard();
+        async function autoMarkUsed(id) {
+            if (!usedState[id]) {
+                usedState[id] = true;
+                updateUI();
+                await saveCloudData();
+            }
+        }
+
+        // Auto-refresh layout whenever your mom opens the link
+        loadCloudData();
+        // Poll database every 10 seconds in case both of you are shopping at the same time
+        setInterval(loadCloudData, 10000);
     </script>
 </body>
 </html>
