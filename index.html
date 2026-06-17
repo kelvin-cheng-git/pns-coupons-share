@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MUI CHUNG PING - 百佳超級市場電子禮券</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
     <style>
         :root {
             --primary: #0066cc;
@@ -68,6 +72,7 @@
             justify-content: space-between;
             box-shadow: 0 2px 6px rgba(0,0,0,0.04);
             border: 1px solid var(--border);
+            transition: all 0.2s ease;
         }
         .left-zone {
             display: flex;
@@ -140,6 +145,7 @@
             background-color: #e5e5ea;
             color: var(--text-muted);
             box-shadow: none;
+            pointer-events: none; /* Prevents opening used coupons */
         }
         .footer-note {
             text-align: center;
@@ -150,11 +156,24 @@
         }
         .sync-indicator {
             text-align: center;
-            font-size: 11px;
+            font-size: 12px;
             color: var(--success);
-            margin-bottom: 8px;
+            margin-bottom: 12px;
             font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
         }
+        .pulse {
+            width: 8px;
+            height: 8px;
+            background-color: var(--success);
+            border-radius: 50%;
+            display: inline-block;
+            animation: blink 1.5s infinite;
+        }
+        @keyframes blink { 0% { opacity: 0.2; } 50% { opacity: 1; } 100% { opacity: 0.2; } }
     </style>
 </head>
 <body>
@@ -164,24 +183,30 @@
         <div class="meta-line"><b>👤 登記姓名：</b>MUI CHUNG PING</div>
         <div class="meta-line"><b>🔢 參考編號：</b>C260211074</div>
         <div class="tracker-bar">
-            <span>餘額：$<span id="remaining-funds">1700</span></span>
-            <span style="font-size:12px; font-weight:normal; opacity:0.8;"><span id="checked-count">3</span> / 20 張已用</span>
+            <span>餘額：$<span id="remaining-funds">0</span></span>
+            <span style="font-size:12px; font-weight:normal; opacity:0.8;"><span id="checked-count">0</span> / 20 張已用</span>
         </div>
     </div>
 
-    <div class="sync-indicator" id="syncStatus">🔄 雲端同步中...</div>
+    <div class="sync-indicator" id="syncStatus"><span class="pulse"></span> 即時雲端連線中...</div>
 
     <div class="coupon-grid" id="couponContainer"></div>
     
     <div class="footer-note">
         使用提示：用完後點擊整行即可勾選記錄。<br>
-        兩部手機會自動同步更新。客服熱線：2606 8658
+        兩部手機會自動即時同步。客服熱線：2606 8658
     </div>
 
     <script>
-        // Unique global box ID using a highly specific string to avoid collisions
-        const BOX_ID = "muichungping_vouchers_2026_v2";
-        const API_URL = `https://api.jsonbin.io/v3/b/6618c2d1e41b4d34e4ded7bf`; // Safe fallback public shared route
+        // ==========================================
+        // 1. PASTE YOUR FIREBASE URL BELOW
+        // ==========================================
+        const firebaseConfig = {
+            databaseURL: "https://pns-coupons-default-rtdb.asia-southeast1.firebasedatabase.app/" 
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database().ref("vouchers");
 
         const couponsData = [
             { id: 1, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/303198c7e458f0716e57dd67c9f8cad3a7757d796ff1226d8dacf23301e2ce29425dfc45fe0347deb8130b0adf6b3f87a91c66b304910a08a9e91addc6a113a819e7" },
@@ -206,23 +231,32 @@
             { id: 20, url: "https://evhk.aswatson.com/evp/webview/retrieval/web/3031eda7b2949bb18d7b467ed4886a2dde47849f4c644c07ab3d2045337f2a331b851504266400e9e7ebd5e4f484cb6c0db909358c2eebb38b8fc1cc3ff190641a29" }
         ];
 
-        // Fallback local memory array
-        let usedState = {};
-        couponsData.forEach(c => { usedState[c.id] = (c.id <= 3); });
+        let currentState = {};
 
-        // Retrieve the state array safely from localStorage if offline
-        const localBackup = localStorage.getItem(BOX_ID);
-        if(localBackup) { usedState = JSON.parse(localBackup); }
+        // 2. LISTEN FOR LIVE CHANGES
+        // This function automatically runs the *millisecond* anyone changes a value
+        db.on("value", (snapshot) => {
+            const data = snapshot.val();
+            
+            // If database is completely empty, initialize the first three as true
+            if (!data) {
+                db.update({ 1: true, 2: true, 3: true });
+                return;
+            }
+            
+            currentState = data;
+            document.getElementById('syncStatus').innerHTML = '<span class="pulse"></span> 即時同步已連線';
+            renderUI();
+        });
 
-        const container = document.getElementById('couponContainer');
-        const statusIndicator = document.getElementById('syncStatus');
-
-        function updateUI() {
+        // 3. RENDER THE INTERFACE
+        function renderUI() {
+            const container = document.getElementById('couponContainer');
             container.innerHTML = '';
             let checkedCount = 0;
 
             couponsData.forEach(coupon => {
-                const isChecked = usedState[coupon.id] === true;
+                const isChecked = currentState[coupon.id] === true;
                 if (isChecked) checkedCount++;
                 
                 const row = document.createElement('div');
@@ -239,7 +273,7 @@
                         </div>
                     </div>
                     <a class="open-btn" href="${coupon.url}" target="_blank" onclick="autoMarkUsed(${coupon.id})">
-                        ${isChecked ? '看二維碼' : '打開禮券'}
+                        ${isChecked ? '已用完' : '打開禮券'}
                     </a>
                 `;
                 container.appendChild(row);
@@ -249,65 +283,17 @@
             document.getElementById('remaining-funds').innerText = (20 - checkedCount) * 100;
         }
 
-        // Fetch shared state using alternative JSONbin storage container
-        async function loadCloudData() {
-            try {
-                // Fetch parsing data through proxy fallback to bypass strict safari third-party restrictions
-                const res = await fetch(`https://api.jsonbin.io/v3/b/661ff79bad1758c9468903c7/latest`, {
-                    headers: { "X-Master-Key": "$2a$10$WqU98F908m3Wk0x0r5Z.HeH80Icl3U6Z7xI9Q.XQZ3S8Z6mZ4mZ4m" }
-                });
-                if (res.ok) {
-                    const resData = await res.json();
-                    if(resData.record && resData.record[BOX_ID]) {
-                        usedState = resData.record[BOX_ID];
-                        localStorage.setItem(BOX_ID, JSON.stringify(usedState));
-                        updateUI();
-                    }
-                    statusIndicator.innerText = "✅ 雲端連線成功 (同步完成)";
-                    statusIndicator.style.color = "var(--success)";
-                }
-            } catch (err) {
-                statusIndicator.innerText = "🔄 網絡連線中...";
-                statusIndicator.style.color = "#8e8e93";
+        // 4. WRITE CHANGES TO FIREBASE
+        function toggleCoupon(id) {
+            const newValue = !(currentState[id] === true);
+            db.child(id.toString()).set(newValue);
+        }
+
+        function autoMarkUsed(id) {
+            if (currentState[id] !== true) {
+                db.child(id.toString()).set(true);
             }
         }
-
-        async function saveCloudData() {
-            localStorage.setItem(BOX_ID, JSON.stringify(usedState));
-            try {
-                const payload = {};
-                payload[BOX_ID] = usedState;
-                await fetch(`https://api.jsonbin.io/v3/b/661ff79bad1758c9468903c7`, {
-                    method: 'PUT',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'X-Master-Key': '$2a$10$WqU98F908m3Wk0x0r5Z.HeH80Icl3U6Z7xI9Q.XQZ3S8Z6mZ4mZ4m'
-                    },
-                    body: JSON.stringify(payload)
-                });
-            } catch (err) {
-                console.error("Sync failed", err);
-            }
-        }
-
-        async function toggleCoupon(id) {
-            usedState[id] = !usedState[id];
-            updateUI();
-            await saveCloudData();
-        }
-
-        async function autoMarkUsed(id) {
-            if (!usedState[id]) {
-                usedState[id] = true;
-                updateUI();
-                await saveCloudData();
-            }
-        }
-
-        updateUI();
-        loadCloudData();
-        // Poll every 8 seconds to stay completely locked in across devices
-        setInterval(loadCloudData, 8000);
     </script>
 </body>
 </html>
