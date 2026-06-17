@@ -89,10 +89,6 @@
             justify-content: center;
             cursor: pointer;
             border-radius: 6px;
-            /* 防止手機長按時彈出選單或選取文字 */
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
         }
         .custom-check {
             width: 24px;
@@ -185,6 +181,39 @@
             animation: blink 1.5s infinite;
         }
         @keyframes blink { 0% { opacity: 0.2; } 50% { opacity: 1; } 100% { opacity: 0.2; } }
+        
+        /* 1999 Ad Popup Styles */
+        .fake-ad-container {
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100vw; 
+            height: 100vh; 
+            background: rgba(0, 0, 0, 0.95); 
+            z-index: 9999; 
+            color: yellow; 
+            text-align: center; 
+            padding-top: 30vh; 
+            font-size: 24px; 
+            font-weight: bold;
+        }
+        .blink-text { 
+            animation: extreme-blink 0.3s infinite; 
+            font-size: 36px; 
+            color: #ff00ff; 
+            margin-bottom: 20px;
+        }
+        @keyframes extreme-blink { 0% {opacity:1;} 50% {opacity:0;} 100% {opacity:1;} }
+        .close-ad-btn {
+            position: absolute; 
+            top: 20px; 
+            right: 20px; 
+            font-size: 12px; 
+            color: #555; 
+            cursor: pointer; 
+            padding: 15px; /* 增加觸控範圍但視覺上保持細小 */
+        }
     </style>
 </head>
 <body>
@@ -204,8 +233,15 @@
     <div class="coupon-grid" id="couponContainer"></div>
     
     <div class="footer-note">
-        使用提示：請精準長按勾選框 5.00 秒以標記使用。<br>
+        使用提示：撳「打開禮券」可能會有小驚喜... 😏<br>
         未必即刻覆嘅客服：CK wing 🙇‍♂️
+    </div>
+
+    <div id="fakeAd" class="fake-ad-container">
+        <div class="blink-text">🎉 恭喜你！🎉</div>
+        成為百佳第 <span style="color:red; font-size:32px;">1,000,000</span> 位幸運兒！<br>
+        贏得「超市手推車」一架！🛒
+        <span class="close-ad-btn" onclick="closeFakeAd()">[不,我不想中獎(點擊關閉)]</span>
     </div>
 
     <script>
@@ -243,7 +279,8 @@
         ];
 
         let currentState = {};
-        let pressStartTime = null;
+        let pendingCouponId = null;
+        let pendingCouponUrl = null;
 
         // 2. LISTEN FOR LIVE CHANGES
         db.on("value", (snapshot) => {
@@ -272,16 +309,10 @@
                 const row = document.createElement('div');
                 row.className = `coupon-row ${isChecked ? 'checked' : ''}`;
                 
-                // 加入 Mouse 同 Touch 事件捕捉
+                // 改動：勾選框回復正常 toggleCoupon 邏輯；打開禮券綁定 triggerFakeAd
                 row.innerHTML = `
                     <div class="left-zone">
-                        <div class="checkbox-wrapper" 
-                             onmousedown="startPress(event)" 
-                             onmouseup="endPress(event, ${coupon.id})" 
-                             onmouseleave="cancelPress()" 
-                             ontouchstart="startPress(event)" 
-                             ontouchend="endPress(event, ${coupon.id})" 
-                             ontouchcancel="cancelPress()">
+                        <div class="checkbox-wrapper" onclick="toggleCoupon(${coupon.id})">
                             <span class="custom-check"></span>
                         </div>
                         <div class="coupon-info">
@@ -289,7 +320,7 @@
                             <span class="coupon-status">${isChecked ? '已使用' : '可使用'}</span>
                         </div>
                     </div>
-                    <a class="open-btn" href="${coupon.url}" target="_blank" onclick="autoMarkUsed(${coupon.id})">
+                    <a class="open-btn" href="#" onclick="triggerFakeAd(event, ${coupon.id}, '${coupon.url}')">
                         ${isChecked ? '已用完' : '打開禮券'}
                     </a>
                 `;
@@ -300,54 +331,36 @@
             document.getElementById('remaining-funds').innerText = (20 - checkedCount) * 100;
         }
 
-        // 4. THE 5-SECOND TORTURE LOGIC
-        function startPress(e) {
-            if (e.cancelable) e.preventDefault(); // 攔截預設操作 (例如右鍵單 / 選取)
-            if (pressStartTime) return;
-            pressStartTime = Date.now();
-            document.getElementById('syncStatus').innerHTML = '🔥 聚氣中... 請精準長按剛好 5 秒！';
+        // 4. CHECKBOX NORMAL LOGIC
+        function toggleCoupon(id) {
+            const newValue = !(currentState[id] === true);
+            db.child(id.toString()).set(newValue);
         }
 
-        function endPress(e, id) {
-            if (e.cancelable) e.preventDefault();
-            if (!pressStartTime) return;
+        // 5. THE 1999 AD POPUP LOGIC
+        function triggerFakeAd(event, id, url) {
+            event.preventDefault(); // 阻止 a tag 預設的跳轉行為
             
-            const duration = (Date.now() - pressStartTime) / 1000;
-            pressStartTime = null;
+            if (currentState[id] === true) return; // 如果已經用咗，直接 return
 
-            const isCurrentlyUsed = currentState[id] === true;
-
-            if (duration >= 4.8 && duration <= 5.2) {
-                alert(`⏱️ 完美！你㩒咗 ${duration.toFixed(2)} 秒，過關！`);
-                db.child(id.toString()).set(!isCurrentlyUsed);
-                document.getElementById('syncStatus').innerHTML = '<span class="pulse"></span> 即時同步已連線';
-            } else if (duration < 4.8) {
-                alert(`❌ 失敗！你只係㩒咗 ${duration.toFixed(2)} 秒，太快喇！急咩啫？`);
-                resetSyncStatus();
-            } else {
-                alert(`❌ 失敗！你㩒咗 ${duration.toFixed(2)} 秒，太耐喇！瞓著咗呀？`);
-                resetSyncStatus();
-            }
+            pendingCouponId = id;
+            pendingCouponUrl = url;
+            document.getElementById('fakeAd').style.display = 'block';
         }
 
-        function cancelPress() {
-            if (pressStartTime) {
-                pressStartTime = null;
-                document.getElementById('syncStatus').innerHTML = '⚠️ 聚氣中斷！手指滑出咗範圍';
-                resetSyncStatus();
-            }
-        }
-
-        function resetSyncStatus() {
-            setTimeout(() => {
-                document.getElementById('syncStatus').innerHTML = '<span class="pulse"></span> 即時同步已連線';
-            }, 2000);
-        }
-
-        // Secret Escape Hatch (The loophole)
-        function autoMarkUsed(id) {
-            if (currentState[id] !== true) {
-                db.child(id.toString()).set(true);
+        function closeFakeAd() {
+            document.getElementById('fakeAd').style.display = 'none';
+            
+            if (pendingCouponId !== null) {
+                // 1. 標記為已使用寫入 Firebase
+                db.child(pendingCouponId.toString()).set(true);
+                // 2. 真正打開禮券網址
+                window.open(pendingCouponUrl, "_blank");
+                
+                alert("算你眼利搵到個關閉掣！幫你剔咗啦！🛒");
+                
+                pendingCouponId = null;
+                pendingCouponUrl = null;
             }
         }
     </script>
